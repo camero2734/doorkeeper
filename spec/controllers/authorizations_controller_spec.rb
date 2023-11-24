@@ -1156,7 +1156,7 @@ RSpec.describe Doorkeeper::AuthorizationsController, type: :controller do
         default_scopes_exist :public
       end
 
-      it "does not redirect" do
+      it "raises InvalidRequest error" do
         expect { get :new, params: { an_invalid: "request" } }.to raise_error(Doorkeeper::Errors::InvalidRequest)
       end
 
@@ -1165,7 +1165,59 @@ RSpec.describe Doorkeeper::AuthorizationsController, type: :controller do
         expect(Doorkeeper::AccessToken.count).to eq 0
       end
     end
+
+    context "invalid client_id" do
+      before do
+        default_scopes_exist :public
+      end
+
+      it "raises InvalidClient error" do
+        expect { get :new, params: { client_id: "invalid" } }.to raise_error(Doorkeeper::Errors::BaseResponseError) do |error|
+          expect(error.response.name).to eq(:invalid_client)
+        end
+      end
+    end
+
+    context "invalid scope" do
+      before do
+        default_scopes_exist :public
+      end
+
+      it "raises InvalidScope error" do
+        expect do
+          get :new, params: {
+            client_id: client.uid,
+            response_type: "token",
+            scope: "invalid",
+            redirect_uri: client.redirect_uri,
+            state: "return-this",
+          }
+        end.to raise_error(Doorkeeper::Errors::BaseResponseError) do |error|
+          expect(error.response.name).to eq(:invalid_scope)
+        end
+      end
+    end
+
+    context "invalid redirect_uri" do
+      before do
+        default_scopes_exist :public
+      end
+
+      it "raises InvalidRedirectUri error" do
+        expect do
+          get :new, params: {
+            client_id: client.uid,
+            response_type: "token",
+            redirect_uri: "invalid",
+            state: "return-this",
+          }
+        end.to raise_error(Doorkeeper::Errors::BaseResponseError) do |error|
+          expect(error.response.name).to eq(:invalid_redirect_uri)
+        end
+      end
+    end
   end
+  
 
   describe "GET #new with callbacks" do
     after do
