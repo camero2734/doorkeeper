@@ -72,7 +72,7 @@ module Doorkeeper
       end
 
       def exception_class
-        raise NotImplementedError, "error response must define #exception_class"
+        Errors::BaseResponseError
       end
 
       private
